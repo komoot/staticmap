@@ -21,7 +21,7 @@ pip install -r requirements.txt
 ```
 
 ## Usage
-Create a new map instance:
+### Create a new map instance:
 
 ```python
 map = StaticMap(width, height, padding, url_template, tile_size)
@@ -38,13 +38,13 @@ map = StaticMap(width, height, padding, url_template, tile_size)
   <dd>minimum distance in pixel between map features (lines, markers) and map border</dd>
 
   <dt>url_template</dt>
-  <dd>the tile server URL for the map base layer, e.g. `http://a.tile.osm.org/{z}/{x}/{y}.png`</dd>
+  <dd>the tile server URL for the map base layer, e.g. <code>http://a.tile.osm.org/{z}/{x}/{y}.png</code></dd>
 
   <dt>tile_size</dt>
   <dd>tile size in pixel, usually 256</dd>
 </dl>
 
-Add a line:
+### Add a line:
 
 ```python
 line = Line(coordinates, color, width))
@@ -56,13 +56,13 @@ m.add_line(line)
   <dd>a sequence of lon/lat pairs</dd>
 
   <dt>color</dt>
-  <dd>a color definition [Pillow supports](http://pillow.readthedocs.org/en/latest/reference/ImageColor.html#color-names)</dd>
+  <dd>a color definition <a href="http://pillow.readthedocs.org/en/latest/reference/ImageColor.html#color-names">Pillow supports</a></dd>
 
   <dt>width</dt>
   <dd>the stroke width of the line in pixel</dd>
 </dl>
 
-Add a map marker:
+### Add a map marker:
 
 ```python
 marker = Marker(coordinate, color, width))
@@ -74,7 +74,7 @@ m.add_marker(marker)
     <dd>a lon/lat pair: e.g. `(120.1, 47.3)`</dd>
 
     <dt>color</dt>
-    <dd>a color definition [Pillow supports](http://pillow.readthedocs.org/en/latest/reference/ImageColor.html#color-names)</dd>
+    <dd>a color definition <a href="http://pillow.readthedocs.org/en/latest/reference/ImageColor.html#color-names">Pillow supports</a></dd>
 
     <dt>width</dt>
     <dd>diameter of marker in pixel</dd>
