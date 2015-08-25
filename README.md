@@ -21,7 +21,7 @@ pip install -r requirements.txt
 ```
 
 ## Usage
-### Create a new map instance:
+#### Create a new map instance:
 
 ```python
 m = StaticMap(width, height, padding, url_template, tile_size)
@@ -35,7 +35,7 @@ padding       | (optional) minimum distance in pixel between map features (lines
 url_template  | (optional) the tile server URL for the map base layer, e.g. <code>http://a.tile.osm.org/{z}/{x}/{y}.png</code>
 tile_size     | (optional) tile size in pixel, usually 256
 
-### Add a line:
+#### Add a line:
 
 ```python
 line = Line(coordinates, color, width))
@@ -48,7 +48,7 @@ coordinate    | a sequence of lon/lat pairs
 color         | a color definition Pillow <a href="http://pillow.readthedocs.org/en/latest/reference/ImageColor.html#color-names">supports</a>
 width         | the stroke width of the line in pixel
 
-### Add a map marker:
+#### Add a map marker:
 
 ```python
 marker = Marker(coordinate, color, width))
@@ -63,7 +63,7 @@ width         | diameter of marker in pixel
 
 
 ## Samples
-### Show Position on Map
+#### Show Position on Map
 ```python
 m = StaticMap(200, 200, url_template='http://a.tile.osm.org/{z}/{x}/{y}.png')
 
@@ -79,7 +79,7 @@ image.save('marker.png')
 
 ![Position Marker on a Map](/samples/marker.png?raw=true)
 
-### Show Ferry Connection
+#### Show Ferry Connection
 ```python
 m = StaticMap(200, 200, 80)
 
