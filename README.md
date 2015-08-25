@@ -24,25 +24,16 @@ pip install -r requirements.txt
 ### Create a new map instance:
 
 ```python
-map = StaticMap(width, height, padding, url_template, tile_size)
+m = StaticMap(width, height, padding, url_template, tile_size)
 ```
 
-<dl>
-  <dt>width</dt>
-  <dd>width of the image in pixels</dd>
-
-  <dt>height</dt>
-  <dd>height of the image in pixels</dd>
-
-  <dt>padding</dt>
-  <dd>minimum distance in pixel between map features (lines, markers) and map border</dd>
-
-  <dt>url_template</dt>
-  <dd>the tile server URL for the map base layer, e.g. <code>http://a.tile.osm.org/{z}/{x}/{y}.png</code></dd>
-
-  <dt>tile_size</dt>
-  <dd>tile size in pixel, usually 256</dd>
-</dl>
+parameter     | description
+------------- | -------------
+width         | width of the image in pixels
+height        | height of the image in pixels
+padding       | (optional) minimum distance in pixel between map features (lines, markers) and map border
+url_template  | (optional) the tile server URL for the map base layer, e.g. <code>http://a.tile.osm.org/{z}/{x}/{y}.png</code>the stroke width of the line in pixel 
+tile_size     | (optional) tile size in pixel, usually 256
 
 ### Add a line:
 
@@ -51,16 +42,11 @@ line = Line(coordinates, color, width))
 m.add_line(line)
 ```
 
-<dl>
-  <dt>coordinate</dt>
-  <dd>a sequence of lon/lat pairs</dd>
-
-  <dt>color</dt>
-  <dd>a color definition <a href="http://pillow.readthedocs.org/en/latest/reference/ImageColor.html#color-names">Pillow supports</a></dd>
-
-  <dt>width</dt>
-  <dd>the stroke width of the line in pixel</dd>
-</dl>
+parameter     | description
+------------- | -------------
+coordinate    | a sequence of lon/lat pairs
+color         | a color definition Pillow <a href="http://pillow.readthedocs.org/en/latest/reference/ImageColor.html#color-names">supports</a>
+width         | the stroke width of the line in pixel
 
 ### Add a map marker:
 
@@ -69,29 +55,25 @@ marker = Marker(coordinate, color, width))
 m.add_marker(marker)
 ```
 
-<dl>
-    <dt>coordinate</dt>
-    <dd>a lon/lat pair: e.g. `(120.1, 47.3)`</dd>
+parameter     | description
+------------- | -------------
+coordinate    | a lon/lat pair: e.g. `(120.1, 47.3)`
+color         | a color definition Pillow <a href="http://pillow.readthedocs.org/en/latest/reference/ImageColor.html#color-names">supports</a>
+width         | diameter of marker in pixel
 
-    <dt>color</dt>
-    <dd>a color definition <a href="http://pillow.readthedocs.org/en/latest/reference/ImageColor.html#color-names">Pillow supports</a></dd>
-
-    <dt>width</dt>
-    <dd>diameter of marker in pixel</dd>
-</dl>
 
 ## Samples
 ### Show Position on Map
 ```python
-map = StaticMap(200, 200, url_template='http://a.tile.osm.org/{z}/{x}/{y}.png')
+m = StaticMap(200, 200, url_template='http://a.tile.osm.org/{z}/{x}/{y}.png')
 
 marker_outline = Marker((10, 47), 'white', 18)
 marker = Marker((10, 47), '#0036FF', 12)
 
-map.add_marker(marker_outline)
-map.add_marker(marker)
+m.add_marker(marker_outline)
+m.add_marker(marker)
 
-image = map.render(zoom=5)
+image = m.render(zoom=5)
 image.save('marker.png')
 ```
 
@@ -99,16 +81,16 @@ image.save('marker.png')
 
 ### Show Ferry Connection
 ```python
-map = StaticMap(200, 200, 80)
+m = StaticMap(200, 200, 80)
 
 coordinates = [[12.422, 45.427], [13.749, 44.885]]
 line_outline = Line(coordinates, 'white', 6)
 line = Line(coordinates, '#D2322D', 4)
 
-map.add_line(line_outline)
-map.add_line(line)
+m.add_line(line_outline)
+m.add_line(line)
 
-image = map.render()
+image = m.render()
 image.save('ferry.png')
 ```
 
