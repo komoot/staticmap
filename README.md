@@ -32,7 +32,7 @@ parameter     | description
 width         | width of the image in pixels
 height        | height of the image in pixels
 padding       | (optional) minimum distance in pixel between map features (lines, markers) and map border
-url_template  | (optional) the tile server URL for the map base layer, e.g. <code>http://a.tile.osm.org/{z}/{x}/{y}.png</code>the stroke width of the line in pixel 
+url_template  | (optional) the tile server URL for the map base layer, e.g. <code>http://a.tile.osm.org/{z}/{x}/{y}.png</code>
 tile_size     | (optional) tile size in pixel, usually 256
 
 ### Add a line:
