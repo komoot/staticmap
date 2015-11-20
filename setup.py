@@ -9,9 +9,7 @@ setup(
   url = 'https://github.com/komoot/staticmap',
   download_url = 'https://github.com/komoot/staticmap/tarball/0.1',
   keywords = 'static map image osm',
-  classifiers = [
-      'Programming Language :: Python :: 3',
-  ],
+  classifiers = [],
   install_requires=[
       'Pillow',
       'requests'
