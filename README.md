@@ -14,7 +14,7 @@ This will create a 300px x 400px map with a blue line drawn from Berlin to Paris
 
 
 ## Installation
-StaticMap is a small library, all it takes is python3 and two python packages: [Pillow](https://python-pillow.github.io/) and [request](http://www.python-requests.org/). You can install them via:
+StaticMap is a small library, all it takes is python and two python packages: [Pillow](https://python-pillow.github.io/) and [request](http://www.python-requests.org/). You can install them via:
 
 ```bash
 pip install -r requirements.txt
