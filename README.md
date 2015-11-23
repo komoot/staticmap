@@ -10,6 +10,7 @@ image = m.render()
 image.save('map.png')
 ```
 This will create a 300px x 400px map with a blue line drawn from Berlin to Paris.
+
 ![Map with Line from Berlin to Paris](/samples/berlin_paris.png?raw=true)
 
 
