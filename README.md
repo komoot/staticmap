@@ -24,16 +24,17 @@ pip install staticmap
 #### Create a new map instance:
 
 ```python
-m = StaticMap(width, height, padding, url_template, tile_size)
+m = StaticMap(width, height, vertical_padding, horizontal_padding, url_template, tile_size)
 ```
 
-parameter     | description
-------------- | -------------
-width         | width of the image in pixels
-height        | height of the image in pixels
-padding       | (optional) minimum distance in pixel between map features (lines, markers) and map border
-url_template  | (optional) the tile server URL for the map base layer, e.g. <code>http://a.tile.osm.org/{z}/{x}/{y}.png</code>
-tile_size     | (optional) tile size in pixel, usually 256
+parameter           | description
+------------------- | -------------
+width               | width of the image in pixels
+height              | height of the image in pixels
+vertical_padding    | (optional) minimum distance in pixel between map features (lines, markers) and map border
+horizontal_padding  | (optional) minimum distance in pixel between map features (lines, markers) and map border
+url_template        | (optional) the tile server URL for the map base layer, e.g. <code>http://a.tile.osm.org/{z}/{x}/{y}.png</code>
+tile_size           | (optional) tile size in pixel, usually 256
 
 #### Add a line:
 
@@ -48,10 +49,10 @@ coordinate    | a sequence of lon/lat pairs
 color         | a color definition Pillow <a href="http://pillow.readthedocs.org/en/latest/reference/ImageColor.html#color-names">supports</a>
 width         | the stroke width of the line in pixel
 
-#### Add a map marker:
+#### Add a map circle marker:
 
 ```python
-marker = Marker(coordinate, color, width))
+marker = CircleMarker(coordinate, color, width))
 m.add_marker(marker)
 ```
 
@@ -67,8 +68,8 @@ width         | diameter of marker in pixel
 ```python
 m = StaticMap(200, 200, url_template='http://a.tile.osm.org/{z}/{x}/{y}.png')
 
-marker_outline = Marker((10, 47), 'white', 18)
-marker = Marker((10, 47), '#0036FF', 12)
+marker_outline = CircleMarker((10, 47), 'white', 18)
+marker = CircleMarker((10, 47), '#0036FF', 12)
 
 m.add_marker(marker_outline)
 m.add_marker(marker)
@@ -77,7 +78,7 @@ image = m.render(zoom=5)
 image.save('marker.png')
 ```
 
-![Position Marker on a Map](/samples/marker.png?raw=true)
+![Position IconMarker on a Map](/samples/marker.png?raw=true)
 
 #### Show Ferry Connection
 ```python
@@ -95,6 +96,19 @@ image.save('ferry.png')
 ```
 
 ![Ferry Connection Shown on a Map](/samples/ferry.png?raw=true)
+
+#### Show Icon Marker
+```python
+m = StaticMap(240, 240, 80)
+icon_flag = IconMarker((6.63204, 45.85378), './samples/icon-flag.png', 12, 32)
+icon_factory = IconMarker((6.6015, 45.8485), './samples/icon-factory.png', 18, 18)
+m.add_marker(icon_flag)
+m.add_marker(icon_factory)
+image = m.render()
+image.save('icons.png')
+```
+
+![Ferry Connection Shown on a Map](/samples/icons.png?raw=true)
 
 ### Licence
 StaticMap is open source and licensed under Apache License, Version 2.0

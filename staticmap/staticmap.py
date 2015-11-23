@@ -36,7 +36,7 @@ class Line:
         )
 
 
-class Marker:
+class CircleMarker:
     def __init__(self, coord, color, width):
         """
         :param coord: a lon-lat pair, eg (175.0, 0.0)
@@ -51,16 +51,34 @@ class Marker:
         self.width = width
 
 
+class IconMarker:
+    def __init__(self, coord, file_path, offset_x, offset_y):
+        """
+        :param coord:  a lon-lat pair, eg (175.0, 0.0)
+        :type coord: tuple
+        :param file_path: path to icon
+        :type file_path: str
+        :param offset_x: x position of the tip of the icon. relative to left bottom, in pixel
+        :type offset_x: int
+        :param offset_y: y position of the tip of the icon. relative to left bottom, in pixel
+        :type offset_y: int
+        """
+        self.coord = coord
+        self.img = Image.open(file_path, 'r')
+        self.offset = (offset_x, offset_y)
+
+
 class StaticMap:
-    # def __init__(self, width: int, height: int, padding: int=0, url_template: str="http://a.tile.komoot.de/komoot/{z}/{x}/{y}.png", tile_size: int=256):
-    def __init__(self, width, height, padding=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256):
+    def __init__(self, width, height, vertical_padding=0, horizontal_padding=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256):
         """
         :param width: map width in pixel
         :type width: int
         :param height:  map height in pixel
         :type height: int
-        :param padding: min distance in pixel from map features to border of map
-        :type padding: int
+        :param vertical_padding: min distance in pixel from map features to border of map
+        :type vertical_padding: int
+        :param horizontal_padding: min distance in pixel from map features to border of map
+        :type horizontal_padding: int
         :param url_template: tile URL
         :type url_template: str
         :param tile_size: the size of the map tiles in pixel
@@ -68,7 +86,7 @@ class StaticMap:
         """
         self.width = width
         self.height = height
-        self.padding = padding
+        self.padding = (horizontal_padding, vertical_padding)
         self.url_template = url_template
         self.tile_size = tile_size
 
@@ -91,7 +109,7 @@ class StaticMap:
     def add_marker(self, marker):
         """
         :param marker: marker to draw
-        :type marker: Marker
+        :type marker: IconMarker or CircleMarker
         """
         self.markers.append(marker)
 
@@ -151,17 +169,17 @@ class StaticMap:
         """
         for z in range(17, -1, -1):
             width = (self._lon_to_x(extent[2], z) - self._lon_to_x(extent[0], z)) * self.tile_size
-            if width > (self.width - self.padding):
+            if width > (self.width - self.padding[0]):
                 continue
 
             height = (self._lat_to_y(extent[1], z) - self._lat_to_y(extent[3], z)) * self.tile_size
-            if height > (self.height - self.padding):
+            if height > (self.height - self.padding[1]):
                 continue
 
             # we found first zoom that can display entire extent
             return z
 
-        return ValueError("map dimension (width = {self.width}px, height = {self.height}px, padding = {self.padding}px) is too small for given lines".format(self=self))
+        return ValueError("map dimension (width = {self.width}px, height = {self.height}px, padding = {self.padding}) is too small for given lines".format(self=self))
 
     @staticmethod
     def _lon_to_x(lon, zoom):
@@ -252,22 +270,30 @@ class StaticMap:
 
             draw.line(points, fill=line.color, width=line.width * 2)
 
-        for marker in self.markers:
+        for circle in filter(lambda m: isinstance(m, CircleMarker), self.markers):
             point = [
-                self._x_to_px(self._lon_to_x(marker.coord[0], self.zoom)) * 2,
-                self._y_to_px(self._lat_to_y(marker.coord[1], self.zoom)) * 2
+                self._x_to_px(self._lon_to_x(circle.coord[0], self.zoom)) * 2,
+                self._y_to_px(self._lat_to_y(circle.coord[1], self.zoom)) * 2
             ]
             draw.ellipse((
-                point[0] - marker.width,
-                point[1] - marker.width,
-                point[0] + marker.width,
-                point[1] + marker.width
-            ), fill=marker.color)
+                point[0] - circle.width,
+                point[1] - circle.width,
+                point[0] + circle.width,
+                point[1] + circle.width
+            ), fill=circle.color)
 
         image_lines = image_lines.resize((self.width, self.height), Image.ANTIALIAS)
 
         # merge lines with base image
         image.paste(image_lines, (0, 0), image_lines)
+
+        # add icon marker
+        for icon in filter(lambda m: isinstance(m, IconMarker), self.markers):
+            position = (
+                self._x_to_px(self._lon_to_x(icon.coord[0], self.zoom)) - icon.offset[0],
+                self._y_to_px(self._lat_to_y(icon.coord[1], self.zoom)) - icon.offset[1]
+            )
+            image.paste(icon.img, position, icon.img)
 
 
 if __name__ == '__main__':
@@ -275,4 +301,4 @@ if __name__ == '__main__':
     line = Line([(13.4, 52.5), (2.3, 48.9)], 'blue', 3)
     map.add_line(line)
     image = map.render()
-    image.save('map.png')
+    image.save('berlin_paris.png')
