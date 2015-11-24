@@ -130,7 +130,7 @@ class StaticMap:
             raise RuntimeError("cannot render empty map, add lines / markers first")
 
         # get extent of all lines
-        extent = self._determine_extent()
+        extent = self.determine_extent()
 
         if zoom is None:
             self.zoom = self._calculate_zoom(extent)
@@ -149,7 +149,7 @@ class StaticMap:
 
         return image
 
-    def _determine_extent(self):
+    def determine_extent(self):
         """ calculate common extent of all current map features """
         extents = [l.extent for l in self.lines]
         extents += [(m.coord[0], m.coord[1]) * 2 for m in self.markers]
@@ -320,7 +320,7 @@ class StaticMap:
                 new_coords.append(p)
                 continue
 
-            dist = sqrt(pow(last[0] - p[0], 2) + pow(last[1], p[1], 2))
+            dist = sqrt(pow(last[0] - p[0], 2) + pow(last[1] - p[1], 2))
             if dist > tolerance:
                 new_coords.append(p)
 
