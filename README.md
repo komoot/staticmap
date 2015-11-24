@@ -49,6 +49,7 @@ parameter     | description
 coordinate    | a sequence of lon/lat pairs
 color         | a color definition Pillow <a href="http://pillow.readthedocs.org/en/latest/reference/ImageColor.html#color-names">supports</a>
 width         | the stroke width of the line in pixel
+simplify      | whether to simplify coordinates, looks less shaky, default is true
 
 #### Add a map circle marker:
 

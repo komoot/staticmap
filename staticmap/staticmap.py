@@ -1,12 +1,12 @@
 from io import BytesIO
-from math import log, tan, cos, pi, floor, ceil
+from math import sqrt, log, tan, pi, cos, ceil, floor
 
 import requests
 from PIL import Image, ImageDraw
 
 
 class Line:
-    def __init__(self, coords, color, width):
+    def __init__(self, coords, color, width, simplify=True):
         """
         Line that can be drawn in a static map
 
@@ -16,10 +16,13 @@ class Line:
         :type color: str
         :param width: width in pixel
         :type width: int
+        :param simplify: whether to simplify coordinates, looks less shaky, default is true
+        :type simplify: object
         """
         self.coords = coords
         self.color = color
         self.width = width
+        self.simplify = simplify
 
     @property
     def extent(self):
@@ -259,6 +262,9 @@ class StaticMap:
                           self._y_to_px(self._lat_to_y(coord[1], self.zoom)) * 2,
                       ) for coord in line.coords]
 
+            if line.simplify:
+                points = self._simplify(points)
+
             for point in points:
                 # draw extra points to make the connection between lines look nice
                 draw.ellipse((
@@ -294,6 +300,31 @@ class StaticMap:
                 self._y_to_px(self._lat_to_y(icon.coord[1], self.zoom)) - icon.offset[1]
             )
             image.paste(icon.img, position, icon.img)
+
+    def _simplify(self, points, tolerance=11):
+        """
+        :param points: list of lon-lat pairs
+        :type points: list
+        :param tolerance: tolerance in pixel
+        :type tolerance: float
+        :return: list of lon-lat pairs
+        :rtype: list
+        """
+        new_coords = []
+
+        for p in points:
+            try:
+                last = new_coords[-1]
+            except IndexError:
+                # first iteration, no last point yet
+                new_coords.append(p)
+                continue
+
+            dist = sqrt(pow(last[0] - p[0], 2) + pow(last[1], p[1], 2))
+            if dist > tolerance:
+                new_coords.append(p)
+
+        return new_coords
 
 
 if __name__ == '__main__':
