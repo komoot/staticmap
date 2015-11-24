@@ -25,15 +25,15 @@ pip install staticmap
 #### Create a new map instance:
 
 ```python
-m = StaticMap(width, height, vertical_padding, horizontal_padding, url_template, tile_size)
+m = StaticMap(width, height, padding_x, padding_y, url_template, tile_size)
 ```
 
 parameter           | description
 ------------------- | -------------
 width               | width of the image in pixels
 height              | height of the image in pixels
-vertical_padding    | (optional) minimum distance in pixel between map features (lines, markers) and map border
-horizontal_padding  | (optional) minimum distance in pixel between map features (lines, markers) and map border
+padding_x           | (optional) minimum distance in pixel between map features (lines, markers) and map border
+padding_y           | (optional) minimum distance in pixel between map features (lines, markers) and map border
 url_template        | (optional) the tile server URL for the map base layer, e.g. <code>http://a.tile.osm.org/{z}/{x}/{y}.png</code>
 tile_size           | (optional) tile size in pixel, usually 256
 

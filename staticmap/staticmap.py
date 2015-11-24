@@ -69,16 +69,16 @@ class IconMarker:
 
 
 class StaticMap:
-    def __init__(self, width, height, vertical_padding=0, horizontal_padding=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256):
+    def __init__(self, width, height, padding_x=0, padding_y=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256):
         """
         :param width: map width in pixel
         :type width: int
         :param height:  map height in pixel
         :type height: int
-        :param vertical_padding: min distance in pixel from map features to border of map
-        :type vertical_padding: int
-        :param horizontal_padding: min distance in pixel from map features to border of map
-        :type horizontal_padding: int
+        :param padding_x: min distance in pixel from map features to border of map
+        :type padding_x: int
+        :param padding_y: min distance in pixel from map features to border of map
+        :type padding_y: int
         :param url_template: tile URL
         :type url_template: str
         :param tile_size: the size of the map tiles in pixel
@@ -86,7 +86,7 @@ class StaticMap:
         """
         self.width = width
         self.height = height
-        self.padding = (horizontal_padding, vertical_padding)
+        self.padding = (padding_x, padding_y)
         self.url_template = url_template
         self.tile_size = tile_size
 
