@@ -1,8 +1,8 @@
 from io import BytesIO
-from math import sqrt, log, tan, pi, cos, ceil, floor
 
 import requests
 from PIL import Image, ImageDraw
+from math import sqrt, log, tan, pi, cos, ceil, floor
 
 
 class Line:
@@ -172,11 +172,11 @@ class StaticMap:
         """
         for z in range(17, -1, -1):
             width = (self._lon_to_x(extent[2], z) - self._lon_to_x(extent[0], z)) * self.tile_size
-            if width > (self.width - self.padding[0]):
+            if width > (self.width - self.padding[0] * 2):
                 continue
 
             height = (self._lat_to_y(extent[1], z) - self._lat_to_y(extent[3], z)) * self.tile_size
-            if height > (self.height - self.padding[1]):
+            if height > (self.height - self.padding[1] * 2):
                 continue
 
             # we found first zoom that can display entire extent
