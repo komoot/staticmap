@@ -2,7 +2,7 @@ from io import BytesIO
 
 import requests
 from PIL import Image, ImageDraw
-from math import sqrt, log, tan, pi, cos, ceil, floor
+from math import sqrt, log, tan, pi, cos, ceil, floor, atan, sinh
 
 
 class Line:
@@ -53,6 +53,10 @@ class CircleMarker:
         self.color = color
         self.width = width
 
+    @property
+    def extent_px(self):
+        return (self.width,) * 4
+
 
 class IconMarker:
     def __init__(self, coord, file_path, offset_x, offset_y):
@@ -69,6 +73,16 @@ class IconMarker:
         self.coord = coord
         self.img = Image.open(file_path, 'r')
         self.offset = (offset_x, offset_y)
+
+    @property
+    def extent_px(self):
+        w, h = self.img.size
+        return (
+            self.offset[0],
+            h - self.offset[1],
+            w - self.offset[0],
+            self.offset[1],
+        )
 
 
 class StaticMap:
@@ -129,13 +143,13 @@ class StaticMap:
         if not self.lines and not self.markers:
             raise RuntimeError("cannot render empty map, add lines / markers first")
 
-        # get extent of all lines
-        extent = self.determine_extent()
-
         if zoom is None:
-            self.zoom = self._calculate_zoom(extent)
+            self.zoom = self._calculate_zoom()
         else:
             self.zoom = zoom
+
+        # get extent of all lines
+        extent = self.determine_extent(zoom=self.zoom)
 
         # calculate center point of map
         lon_center, lat_center = (extent[0] + extent[2]) / 2, (extent[1] + extent[3]) / 2
@@ -149,10 +163,36 @@ class StaticMap:
 
         return image
 
-    def determine_extent(self):
-        """ calculate common extent of all current map features """
+    def determine_extent(self, zoom=None):
+        """
+        calculate common extent of all current map features
+
+        :param zoom: optional parameter, when set extent of markers can be considered
+        :type zoom: int
+        :return: extent (min_lon, min_lat, max_lon, max_lat)
+        :rtype: tuple
+        """
         extents = [l.extent for l in self.lines]
-        extents += [(m.coord[0], m.coord[1]) * 2 for m in self.markers]
+
+        for m in self.markers:
+            e = (m.coord[0], m.coord[1])
+
+            if zoom is None:
+                extents.append(e * 2)
+                continue
+
+            # consider dimension of marker
+            e_px = m.extent_px
+
+            x = self._lon_to_x(e[0], zoom)
+            y = self._lat_to_y(e[1], zoom)
+
+            extents += [(
+                self._x_to_lon(x - float(e_px[0]) / self.tile_size, zoom),
+                self._y_to_lat(y + float(e_px[1]) / self.tile_size, zoom),
+                self._x_to_lon(x + float(e_px[2]) / self.tile_size, zoom),
+                self._y_to_lat(y - float(e_px[3]) / self.tile_size, zoom)
+            )]
 
         return (
             min(e[0] for e in extents),
@@ -161,7 +201,7 @@ class StaticMap:
             max(e[3] for e in extents)
         )
 
-    def _calculate_zoom(self, extent):
+    def _calculate_zoom(self):
         """
         calculate the best zoom level for given extent
 
@@ -170,7 +210,10 @@ class StaticMap:
         :return: lowest zoom level for which the entire extent fits in
         :rtype: int
         """
+
         for z in range(17, -1, -1):
+            extent = self.determine_extent(zoom=z)
+
             width = (self._lon_to_x(extent[2], z) - self._lon_to_x(extent[0], z)) * self.tile_size
             if width > (self.width - self.padding[0] * 2):
                 continue
@@ -192,7 +235,7 @@ class StaticMap:
         :type zoom: int
         :rtype: float
         """
-        return ((lon + 180) / 360) * pow(2, zoom)
+        return ((lon + 180.) / 360) * pow(2, zoom)
 
     @staticmethod
     def _lat_to_y(lat, zoom):
@@ -203,6 +246,14 @@ class StaticMap:
         :rtype: float
         """
         return (1 - log(tan(lat * pi / 180) + 1 / cos(lat * pi / 180)) / pi) / 2 * pow(2, zoom)
+
+    @staticmethod
+    def _x_to_lon(x, zoom):
+        return x / pow(2, zoom) * 360.0 - 180.0
+
+    @staticmethod
+    def _y_to_lat(y, zoom):
+        return atan(sinh(pi * (1 - 2 * y / pow(2, zoom)))) / pi * 180
 
     def _x_to_px(self, x):
         """
