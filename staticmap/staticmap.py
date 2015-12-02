@@ -1,8 +1,8 @@
 from io import BytesIO
+from math import sqrt, log, tan, pi, cos, ceil, floor, atan, sinh
 
 import requests
 from PIL import Image, ImageDraw
-from math import sqrt, log, tan, pi, cos, ceil, floor, atan, sinh
 
 
 class Line:
@@ -86,7 +86,7 @@ class IconMarker:
 
 
 class StaticMap:
-    def __init__(self, width, height, padding_x=0, padding_y=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256):
+    def __init__(self, width, height, padding_x=0, padding_y=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256, tile_request_timeout=None):
         """
         :param width: map width in pixel
         :type width: int
@@ -100,12 +100,15 @@ class StaticMap:
         :type url_template: str
         :param tile_size: the size of the map tiles in pixel
         :type tile_size: int
+        :param tile_request_timeout: time in seconds to wait for requesting map tiles
+        :type tile_request_timeout: float
         """
         self.width = width
         self.height = height
         self.padding = (padding_x, padding_y)
         self.url_template = url_template
         self.tile_size = tile_size
+        self.request_timeout = tile_request_timeout
 
         # features
         self.markers = []
@@ -284,9 +287,17 @@ class StaticMap:
 
         for x in range(x_min, x_max):
             for y in range(y_min, y_max):
-                res = requests.get(self.url_template.format(z=self.zoom, x=x, y=y))
-                if res.status_code != 200:
-                    raise RuntimeError("could not download tile: {}: {}".format(self.url_template.format(z=self.zoom, x=x, y=y), res.status_code))
+                nb_requests = 0
+                while True:
+                    nb_requests += 1
+                    res = requests.get(self.url_template.format(z=self.zoom, x=x, y=y), timeout=self.request_timeout)
+
+                    if res.status_code == 200:
+                        break
+
+                    if nb_requests >= 3:
+                        # reached max tries to request tile
+                        raise RuntimeError("could not download tile: {}: {}".format(self.url_template.format(z=self.zoom, x=x, y=y), res.status_code))
 
                 tile = Image.open(BytesIO(res.content))
                 box = [

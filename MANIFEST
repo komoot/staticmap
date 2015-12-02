@@ -3,3 +3,4 @@ setup.cfg
 setup.py
 staticmap/__init__.py
 staticmap/staticmap.py
+staticmap/tests.py
