@@ -1,3 +1,4 @@
+import time
 from io import BytesIO
 from math import sqrt, log, tan, pi, cos, ceil, floor, atan, sinh
 
@@ -295,9 +296,11 @@ class StaticMap:
                     if res.status_code == 200:
                         break
 
-                    if nb_requests >= 3:
+                    if nb_requests >= 4:
                         # reached max tries to request tile
                         raise RuntimeError("could not download tile: {}: {}".format(self.url_template.format(z=self.zoom, x=x, y=y), res.status_code))
+
+                    time.sleep(3 ** nb_requests)  # 3,9,27,... seconds
 
                 tile = Image.open(BytesIO(res.content))
                 box = [
