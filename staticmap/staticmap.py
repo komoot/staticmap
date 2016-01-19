@@ -290,14 +290,20 @@ class StaticMap:
                 nb_requests = 0
                 while True:
                     nb_requests += 1
-                    res = requests.get(self.url_template.format(z=self.zoom, x=x, y=y), timeout=self.request_timeout)
+
+                    # x and y may have crossed the date line
+                    max_tile = 2 ** self.zoom
+                    tile_x = (x + max_tile) % max_tile
+                    tile_y = (y + max_tile) % max_tile
+
+                    res = requests.get(self.url_template.format(z=self.zoom, x=tile_x, y=tile_y), timeout=self.request_timeout)
 
                     if res.status_code == 200:
                         break
 
                     if nb_requests >= 3:
                         # reached max tries to request tile
-                        raise RuntimeError("could not download tile: {}: {}".format(self.url_template.format(z=self.zoom, x=x, y=y), res.status_code))
+                        raise RuntimeError("could not download tile: {}: {}".format(self.url_template.format(z=self.zoom, x=tile_x, y=tile_y), res.status_code))
 
                 tile = Image.open(BytesIO(res.content))
                 box = [
