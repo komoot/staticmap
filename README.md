@@ -64,6 +64,19 @@ coordinate    | a lon/lat pair: e.g. `(120.1, 47.3)`
 color         | a color definition Pillow <a href="http://pillow.readthedocs.org/en/latest/reference/ImageColor.html#color-names">supports</a>
 width         | diameter of marker in pixel
 
+#### Add a polygon:
+
+```python
+polygon = Polygon(coordinates, fill_color, outline_color, simplify)
+m.add_polygon(marker)
+```
+
+parameter     | description
+------------- | -------------
+coordinate    | a lon/lat pair: e.g. `[[9.628, 47.144], [9.531, 47.270], [9.468, 47.057], [9.623, 47.050], [9.628, 47.144]]`
+fill_color    | a color definition Pillow <a href="http://pillow.readthedocs.org/en/latest/reference/ImageColor.html#color-names">supports</a>
+outline_color | a color definition Pillow <a href="http://pillow.readthedocs.org/en/latest/reference/ImageColor.html#color-names">supports</a>
+simplify      | whether to simplify coordinates, looks less shaky, default is true
 
 ## Samples
 #### Show Position on Map

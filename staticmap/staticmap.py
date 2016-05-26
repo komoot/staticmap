@@ -17,7 +17,7 @@ class Line:
         :param width: width in pixel
         :type width: int
         :param simplify: whether to simplify coordinates, looks less shaky, default is true
-        :type simplify: object
+        :type simplify: bool
         """
         self.coords = coords
         self.color = color
@@ -85,6 +85,90 @@ class IconMarker:
         )
 
 
+class Polygon:
+    """
+    Polygon that can be drawn on map
+
+    :param coords: an iterable of lon-lat pairs, e.g. ((0.0, 0.0), (175.0, 0.0), (175.0, -85.1))
+    :type coords: list
+    :param fill_color: color suitable for PIL / Pillow, can be None (transparent)
+    :type fill_color: str
+    :param outline_color: color suitable for PIL / Pillow, can be None (transparent)
+    :type outline_color: str
+    :param simplify: whether to simplify coordinates, looks less shaky, default is true
+    :type simplify: bool
+    """
+
+    def __init__(self, coords, fill_color, outline_color, simplify=True):
+        self.coords = coords
+        self.fill_color = fill_color
+        self.outline_color = outline_color
+        self.simplify = simplify
+
+    @property
+    def extent(self):
+        return (
+            min((c[0] for c in self.coords)),
+            min((c[1] for c in self.coords)),
+            max((c[0] for c in self.coords)),
+            max((c[1] for c in self.coords)),
+        )
+
+
+def _lon_to_x(lon, zoom):
+    """
+    transform longitude to tile number
+    :type lon: float
+    :type zoom: int
+    :rtype: float
+    """
+    return ((lon + 180.) / 360) * pow(2, zoom)
+
+
+def _lat_to_y(lat, zoom):
+    """
+    transform latitude to tile number
+    :type lat: float
+    :type zoom: int
+    :rtype: float
+    """
+    return (1 - log(tan(lat * pi / 180) + 1 / cos(lat * pi / 180)) / pi) / 2 * pow(2, zoom)
+
+
+def _y_to_lat(y, zoom):
+    return atan(sinh(pi * (1 - 2 * y / pow(2, zoom)))) / pi * 180
+
+
+def _x_to_lon(x, zoom):
+    return x / pow(2, zoom) * 360.0 - 180.0
+
+
+def _simplify(points, tolerance=11):
+    """
+    :param points: list of lon-lat pairs
+    :type points: list
+    :param tolerance: tolerance in pixel
+    :type tolerance: float
+    :return: list of lon-lat pairs
+    :rtype: list
+    """
+    new_coords = []
+
+    for p in points:
+        try:
+            last = new_coords[-1]
+        except IndexError:
+            # first iteration, no last point yet
+            new_coords.append(p)
+            continue
+
+        dist = sqrt(pow(last[0] - p[0], 2) + pow(last[1] - p[1], 2))
+        if dist > tolerance:
+            new_coords.append(p)
+
+    return new_coords
+
+
 class StaticMap:
     def __init__(self, width, height, padding_x=0, padding_y=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256, tile_request_timeout=None):
         """
@@ -113,6 +197,7 @@ class StaticMap:
         # features
         self.markers = []
         self.lines = []
+        self.polygons = []
 
         # fields that get set when map is rendered
         self.x_center = 0
@@ -133,6 +218,13 @@ class StaticMap:
         """
         self.markers.append(marker)
 
+    def add_polygon(self, polygon):
+        """
+        :param polygon: polygon to be drawn
+        :type polygon: Polygon
+        """
+        self.polygons.append(polygon)
+
     def render(self, zoom=None):
         """
         render static map with all map features that were added to map before
@@ -143,8 +235,8 @@ class StaticMap:
         :rtype: Image.Image
         """
 
-        if not self.lines and not self.markers:
-            raise RuntimeError("cannot render empty map, add lines / markers first")
+        if not self.lines and not self.markers and not self.polygons:
+            raise RuntimeError("cannot render empty map, add lines / markers / polygons first")
 
         if zoom is None:
             self.zoom = self._calculate_zoom()
@@ -156,8 +248,8 @@ class StaticMap:
 
         # calculate center point of map
         lon_center, lat_center = (extent[0] + extent[2]) / 2, (extent[1] + extent[3]) / 2
-        self.x_center = self._lon_to_x(lon_center, self.zoom)
-        self.y_center = self._lat_to_y(lat_center, self.zoom)
+        self.x_center = _lon_to_x(lon_center, self.zoom)
+        self.y_center = _lat_to_y(lat_center, self.zoom)
 
         image = Image.new('RGB', (self.width, self.height), '#fff')
 
@@ -187,15 +279,17 @@ class StaticMap:
             # consider dimension of marker
             e_px = m.extent_px
 
-            x = self._lon_to_x(e[0], zoom)
-            y = self._lat_to_y(e[1], zoom)
+            x = _lon_to_x(e[0], zoom)
+            y = _lat_to_y(e[1], zoom)
 
             extents += [(
-                self._x_to_lon(x - float(e_px[0]) / self.tile_size, zoom),
-                self._y_to_lat(y + float(e_px[1]) / self.tile_size, zoom),
-                self._x_to_lon(x + float(e_px[2]) / self.tile_size, zoom),
-                self._y_to_lat(y - float(e_px[3]) / self.tile_size, zoom)
+                _x_to_lon(x - float(e_px[0]) / self.tile_size, zoom),
+                _y_to_lat(y + float(e_px[1]) / self.tile_size, zoom),
+                _x_to_lon(x + float(e_px[2]) / self.tile_size, zoom),
+                _y_to_lat(y - float(e_px[3]) / self.tile_size, zoom)
             )]
+
+        extents += [p.extent for p in self.polygons]
 
         return (
             min(e[0] for e in extents),
@@ -217,11 +311,11 @@ class StaticMap:
         for z in range(17, -1, -1):
             extent = self.determine_extent(zoom=z)
 
-            width = (self._lon_to_x(extent[2], z) - self._lon_to_x(extent[0], z)) * self.tile_size
+            width = (_lon_to_x(extent[2], z) - _lon_to_x(extent[0], z)) * self.tile_size
             if width > (self.width - self.padding[0] * 2):
                 continue
 
-            height = (self._lat_to_y(extent[1], z) - self._lat_to_y(extent[3], z)) * self.tile_size
+            height = (_lat_to_y(extent[1], z) - _lat_to_y(extent[3], z)) * self.tile_size
             if height > (self.height - self.padding[1] * 2):
                 continue
 
@@ -229,34 +323,6 @@ class StaticMap:
             return z
 
         return ValueError("map dimension (width = {self.width}px, height = {self.height}px, padding = {self.padding}) is too small for given lines".format(self=self))
-
-    @staticmethod
-    def _lon_to_x(lon, zoom):
-        """
-        transform longitude to tile number
-        :type lon: float
-        :type zoom: int
-        :rtype: float
-        """
-        return ((lon + 180.) / 360) * pow(2, zoom)
-
-    @staticmethod
-    def _lat_to_y(lat, zoom):
-        """
-        transform latitude to tile number
-        :type lat: float
-        :type zoom: int
-        :rtype: float
-        """
-        return (1 - log(tan(lat * pi / 180) + 1 / cos(lat * pi / 180)) / pi) / 2 * pow(2, zoom)
-
-    @staticmethod
-    def _x_to_lon(x, zoom):
-        return x / pow(2, zoom) * 360.0 - 180.0
-
-    @staticmethod
-    def _y_to_lat(y, zoom):
-        return atan(sinh(pi * (1 - 2 * y / pow(2, zoom)))) / pi * 180
 
     def _x_to_px(self, x):
         """
@@ -326,12 +392,12 @@ class StaticMap:
 
         for line in self.lines:
             points = [(
-                          self._x_to_px(self._lon_to_x(coord[0], self.zoom)) * 2,
-                          self._y_to_px(self._lat_to_y(coord[1], self.zoom)) * 2,
+                          self._x_to_px(_lon_to_x(coord[0], self.zoom)) * 2,
+                          self._y_to_px(_lat_to_y(coord[1], self.zoom)) * 2,
                       ) for coord in line.coords]
 
             if line.simplify:
-                points = self._simplify(points)
+                points = _simplify(points)
 
             for point in points:
                 # draw extra points to make the connection between lines look nice
@@ -346,8 +412,8 @@ class StaticMap:
 
         for circle in filter(lambda m: isinstance(m, CircleMarker), self.markers):
             point = [
-                self._x_to_px(self._lon_to_x(circle.coord[0], self.zoom)) * 2,
-                self._y_to_px(self._lat_to_y(circle.coord[1], self.zoom)) * 2
+                self._x_to_px(_lon_to_x(circle.coord[0], self.zoom)) * 2,
+                self._y_to_px(_lat_to_y(circle.coord[1], self.zoom)) * 2
             ]
             draw.ellipse((
                 point[0] - circle.width,
@@ -355,6 +421,17 @@ class StaticMap:
                 point[0] + circle.width,
                 point[1] + circle.width
             ), fill=circle.color)
+
+        for polygon in self.polygons:
+            points = [(
+                          self._x_to_px(_lon_to_x(coord[0], self.zoom)) * 2,
+                          self._y_to_px(_lat_to_y(coord[1], self.zoom)) * 2,
+
+                      ) for coord in polygon.coords]
+            if polygon.simplify:
+                points = _simplify(points)
+
+            draw.polygon(points, fill=polygon.fill_color, outline=polygon.outline_color)
 
         image_lines = image_lines.resize((self.width, self.height), Image.ANTIALIAS)
 
@@ -364,35 +441,10 @@ class StaticMap:
         # add icon marker
         for icon in filter(lambda m: isinstance(m, IconMarker), self.markers):
             position = (
-                self._x_to_px(self._lon_to_x(icon.coord[0], self.zoom)) - icon.offset[0],
-                self._y_to_px(self._lat_to_y(icon.coord[1], self.zoom)) - icon.offset[1]
+                self._x_to_px(_lon_to_x(icon.coord[0], self.zoom)) - icon.offset[0],
+                self._y_to_px(_lat_to_y(icon.coord[1], self.zoom)) - icon.offset[1]
             )
             image.paste(icon.img, position, icon.img)
-
-    def _simplify(self, points, tolerance=11):
-        """
-        :param points: list of lon-lat pairs
-        :type points: list
-        :param tolerance: tolerance in pixel
-        :type tolerance: float
-        :return: list of lon-lat pairs
-        :rtype: list
-        """
-        new_coords = []
-
-        for p in points:
-            try:
-                last = new_coords[-1]
-            except IndexError:
-                # first iteration, no last point yet
-                new_coords.append(p)
-                continue
-
-            dist = sqrt(pow(last[0] - p[0], 2) + pow(last[1] - p[1], 2))
-            if dist > tolerance:
-                new_coords.append(p)
-
-        return new_coords
 
 
 if __name__ == '__main__':
