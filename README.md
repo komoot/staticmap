@@ -68,7 +68,7 @@ width         | diameter of marker in pixel
 
 ```python
 polygon = Polygon(coordinates, fill_color, outline_color, simplify)
-m.add_polygon(marker)
+m.add_polygon(polygon)
 ```
 
 parameter     | description
