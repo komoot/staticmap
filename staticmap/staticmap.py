@@ -152,19 +152,19 @@ def _simplify(points, tolerance=11):
     :return: list of lon-lat pairs
     :rtype: list
     """
-    new_coords = []
+    if not points:
+        return points
 
-    for p in points:
-        try:
-            last = new_coords[-1]
-        except IndexError:
-            # first iteration, no last point yet
-            new_coords.append(p)
-            continue
+    new_coords = [points[0]]
+
+    for p in points[1:-1]:
+        last = new_coords[-1]
 
         dist = sqrt(pow(last[0] - p[0], 2) + pow(last[1] - p[1], 2))
         if dist > tolerance:
             new_coords.append(p)
+
+    new_coords.append(points[-1])
 
     return new_coords
 
