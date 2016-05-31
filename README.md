@@ -81,6 +81,8 @@ simplify      | whether to simplify coordinates, looks less shaky, default is tr
 ## Samples
 #### Show Position on Map
 ```python
+from staticmap import StaticMap, CircleMarker
+
 m = StaticMap(200, 200, url_template='http://a.tile.osm.org/{z}/{x}/{y}.png')
 
 marker_outline = CircleMarker((10, 47), 'white', 18)
@@ -97,6 +99,8 @@ image.save('marker.png')
 
 #### Show Ferry Connection
 ```python
+from staticmap import StaticMap, Line
+
 m = StaticMap(200, 200, 80)
 
 coordinates = [[12.422, 45.427], [13.749, 44.885]]
@@ -114,6 +118,8 @@ image.save('ferry.png')
 
 #### Show Icon Marker
 ```python
+from staticmap import StaticMap, IconMarker
+
 m = StaticMap(240, 240, 80)
 icon_flag = IconMarker((6.63204, 45.85378), './samples/icon-flag.png', 12, 32)
 icon_factory = IconMarker((6.6015, 45.8485), './samples/icon-factory.png', 18, 18)
