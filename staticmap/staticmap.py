@@ -431,7 +431,8 @@ class StaticMap:
             if polygon.simplify:
                 points = _simplify(points)
 
-            draw.polygon(points, fill=polygon.fill_color, outline=polygon.outline_color)
+            if polygon.fill_color or polygon.outline_color:
+                draw.polygon(points, fill=polygon.fill_color, outline=polygon.outline_color)
 
         image_lines = image_lines.resize((self.width, self.height), Image.ANTIALIAS)
 
