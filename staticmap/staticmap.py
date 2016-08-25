@@ -170,7 +170,7 @@ def _simplify(points, tolerance=11):
 
 
 class StaticMap:
-    def __init__(self, width, height, padding_x=0, padding_y=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256, tile_request_timeout=None, headers=None):
+    def __init__(self, width, height, padding_x=0, padding_y=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256, tile_request_timeout=None, headers=None, reverse_y=False):
         """
         :param width: map width in pixel
         :type width: int
@@ -188,6 +188,8 @@ class StaticMap:
         :type tile_request_timeout: float
         :param headers: additional headers to add to http requests
         :type headers: dict
+        :param reverse_y: tile source has TMS y origin
+        :type reverse_y: bool
         """
         self.width = width
         self.height = height
@@ -196,6 +198,7 @@ class StaticMap:
         self.headers = headers
         self.tile_size = tile_size
         self.request_timeout = tile_request_timeout
+        self.reverse_y = reverse_y
 
         # features
         self.markers = []
@@ -364,6 +367,9 @@ class StaticMap:
                     max_tile = 2 ** self.zoom
                     tile_x = (x + max_tile) % max_tile
                     tile_y = (y + max_tile) % max_tile
+
+                    if self.reverse_y:
+                        tile_y  = ((1<<self.zoom)-tile_y)-1
 
                     res = requests.get(self.url_template.format(z=self.zoom, x=tile_x, y=tile_y), timeout=self.request_timeout, headers=self.headers)
 
