@@ -237,7 +237,7 @@ class StaticMap:
         :rtype: Image.Image
         """
 
-        if not self.lines and not self.markers and not self.polygons:
+        if not self.lines and not self.markers and not self.polygons and not (center and zoom):
             raise RuntimeError("cannot render empty map, add lines / markers / polygons first")
 
         if zoom is None:
