@@ -225,12 +225,14 @@ class StaticMap:
         """
         self.polygons.append(polygon)
 
-    def render(self, zoom=None):
+    def render(self, zoom=None, center=None):
         """
         render static map with all map features that were added to map before
 
         :param zoom: optional zoom level, will be optimized automatically if not given.
         :type zoom: int
+        :param center: optional center of map, will be set automatically from markers if not given.
+        :type center: list
         :return: PIL image instance
         :rtype: Image.Image
         """
@@ -243,13 +245,17 @@ class StaticMap:
         else:
             self.zoom = zoom
 
-        # get extent of all lines
-        extent = self.determine_extent(zoom=self.zoom)
+        if center:
+            self.x_center = _lon_to_x(center[0], self.zoom)
+            self.y_center = _lat_to_y(center[1], self.zoom)            
+        else:
+            # get extent of all lines
+            extent = self.determine_extent(zoom=self.zoom)
 
-        # calculate center point of map
-        lon_center, lat_center = (extent[0] + extent[2]) / 2, (extent[1] + extent[3]) / 2
-        self.x_center = _lon_to_x(lon_center, self.zoom)
-        self.y_center = _lat_to_y(lat_center, self.zoom)
+            # calculate center point of map
+            lon_center, lat_center = (extent[0] + extent[2]) / 2, (extent[1] + extent[3]) / 2
+            self.x_center = _lon_to_x(lon_center, self.zoom)
+            self.y_center = _lat_to_y(lat_center, self.zoom)
 
         image = Image.new('RGB', (self.width, self.height), '#fff')
 
