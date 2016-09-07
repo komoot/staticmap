@@ -170,7 +170,7 @@ def _simplify(points, tolerance=11):
 
 
 class StaticMap:
-    def __init__(self, width, height, padding_x=0, padding_y=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256, tile_request_timeout=None, headers=None, reverse_y=False):
+    def __init__(self, width, height, padding_x=0, padding_y=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256, tile_request_timeout=None, headers=None, reverse_y=False, background_color="#fff"):
         """
         :param width: map width in pixel
         :type width: int
@@ -190,6 +190,8 @@ class StaticMap:
         :type headers: dict
         :param reverse_y: tile source has TMS y origin
         :type reverse_y: bool
+        :param background_color: Image background color, only visible when tiles are transparent
+        :type background_color: str
         """
         self.width = width
         self.height = height
@@ -199,6 +201,7 @@ class StaticMap:
         self.tile_size = tile_size
         self.request_timeout = tile_request_timeout
         self.reverse_y = reverse_y
+        self.background_color = background_color
 
         # features
         self.markers = []
@@ -263,7 +266,7 @@ class StaticMap:
             self.x_center = _lon_to_x(lon_center, self.zoom)
             self.y_center = _lat_to_y(lat_center, self.zoom)
 
-        image = Image.new('RGB', (self.width, self.height), '#fff')
+        image = Image.new('RGB', (self.width, self.height), self.background_color)
 
         self._draw_base_layer(image)
         self._draw_features(image)
@@ -386,14 +389,14 @@ class StaticMap:
                         # reached max tries to request tile
                         raise RuntimeError("could not download tile: {}: {}".format(self.url_template.format(z=self.zoom, x=tile_x, y=tile_y), res.status_code))
 
-                tile = Image.open(BytesIO(res.content))
+                tile = Image.open(BytesIO(res.content)).convert("RGBA")
                 box = [
                     self._x_to_px(x),
                     self._y_to_px(y),
                     self._x_to_px(x + 1),
                     self._y_to_px(y + 1),
                 ]
-                image.paste(tile, box)
+                image.paste(tile, box, tile)
 
     def _draw_features(self, image):
         """
