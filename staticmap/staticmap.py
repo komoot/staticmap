@@ -207,6 +207,7 @@ class StaticMap:
         self.markers = []
         self.lines = []
         self.polygons = []
+        self.extent = []
 
         # fields that get set when map is rendered
         self.x_center = 0
@@ -234,6 +235,30 @@ class StaticMap:
         """
         self.polygons.append(polygon)
 
+    def set_extent(self, min_lon, min_lat, max_lon, max_lat):
+        """
+        :param min_lon, min_lat, max_lon, max_lat: bounding box of desired map extent
+        :type integer: min_lon, min_lat, max_lon, max_lat
+        """
+       
+        # define our booleans
+        relations = max_lon > min_lon and max_lat > min_lat 
+        longitudes =  -180 <= max_lon <= 180 and -180 <= min_lon <= 180
+        latitudes = -90 <= max_lat <= 90 and -90 <= min_lat <= 90
+        
+        # if they all pass, set the extent and centers
+        if relations and longitudes and latitudes:
+            self.extent = [min_lon, min_lat, max_lon, max_lat]
+        
+        # otherwise print the corresponding error messages
+        elif not longitudes:
+            raise RuntimeError("Longitudes must be between -90 and 90.  You entered ", min_lon, " - ", max_lon)
+        elif not latitudes:
+            raise RuntimeError("Latitutdes must be between -180 and 180.  You entered ", min_lat, "-", max_lat)
+        elif not relations:
+            raise RuntimeError("max_lon must be more than min_lon, and max_lat must be more than min_lat.  \
+                You entered max_lon: ", max_lon, " min_lon: ", min_lon, " max_lat: ", max_lat, "min_lat: ", min_lat)
+
     def render(self, zoom=None, center=None):
         """
         render static map with all map features that were added to map before
@@ -245,6 +270,13 @@ class StaticMap:
         :return: PIL image instance
         :rtype: Image.Image
         """
+        if self.extent != []:
+            ex_poly = [[self.extent[0], self.extent[1]],
+                [self.extent[0], self.extent[3]],
+                [self.extent[2], self.extent[1]],
+                [self.extent[2], self.extent[3]]]
+            polygon = Polygon(ex_poly, 'white', 'white', True)
+            self.add_polygon(polygon)
 
         if not self.lines and not self.markers and not self.polygons and not (center and zoom):
             raise RuntimeError("cannot render empty map, add lines / markers / polygons first")
@@ -264,11 +296,15 @@ class StaticMap:
             # calculate center point of map
             lon_center, lat_center = (extent[0] + extent[2]) / 2, (extent[1] + extent[3]) / 2
             self.x_center = _lon_to_x(lon_center, self.zoom)
-            self.y_center = _lat_to_y(lat_center, self.zoom)
+            self.y_center = _lat_to_y(lat_center, self.zoom) 
 
         image = Image.new('RGB', (self.width, self.height), self.background_color)
 
         self._draw_base_layer(image)
+
+        if self.extent != []:
+            self.polygons.remove(polygon)
+
         self._draw_features(image)
 
         return image
