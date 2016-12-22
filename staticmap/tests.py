@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from staticmap import StaticMap
 
+
 class LonLatConversionTest(TestCase):
     def testLon(self):
         for lon in range(-180, 180, 20):
