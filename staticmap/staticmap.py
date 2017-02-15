@@ -247,7 +247,8 @@ class StaticMap:
         """
 
         if not self.lines and not self.markers and not self.polygons and not (center and zoom):
-            raise RuntimeError("cannot render empty map, add lines / markers / polygons first")
+            if zoom is None or center is None:
+                raise RuntimeError("cannot render empty map, either add lines / markers / polygons or specify center and zoom for an empty map")
 
         if zoom is None:
             self.zoom = self._calculate_zoom()
