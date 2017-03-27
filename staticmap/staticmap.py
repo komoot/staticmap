@@ -337,7 +337,8 @@ class StaticMap:
             # we found first zoom that can display entire extent
             return z
 
-        return ValueError("map dimension (width = {self.width}px, height = {self.height}px, padding = {self.padding}) is too small for given lines".format(self=self))
+        # map dimension is too small to fit all features
+        return 0
 
     def _x_to_px(self, x):
         """
@@ -410,9 +411,9 @@ class StaticMap:
 
         for line in self.lines:
             points = [(
-                          self._x_to_px(_lon_to_x(coord[0], self.zoom)) * 2,
-                          self._y_to_px(_lat_to_y(coord[1], self.zoom)) * 2,
-                      ) for coord in line.coords]
+                self._x_to_px(_lon_to_x(coord[0], self.zoom)) * 2,
+                self._y_to_px(_lat_to_y(coord[1], self.zoom)) * 2,
+            ) for coord in line.coords]
 
             if line.simplify:
                 points = _simplify(points)
@@ -442,10 +443,10 @@ class StaticMap:
 
         for polygon in self.polygons:
             points = [(
-                          self._x_to_px(_lon_to_x(coord[0], self.zoom)) * 2,
-                          self._y_to_px(_lat_to_y(coord[1], self.zoom)) * 2,
+                self._x_to_px(_lon_to_x(coord[0], self.zoom)) * 2,
+                self._y_to_px(_lat_to_y(coord[1], self.zoom)) * 2,
 
-                      ) for coord in polygon.coords]
+            ) for coord in polygon.coords]
             if polygon.simplify:
                 points = _simplify(points)
 
