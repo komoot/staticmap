@@ -122,6 +122,9 @@ def _lon_to_x(lon, zoom):
     :type zoom: int
     :rtype: float
     """
+    if not (-180 <= lon <= 180):
+        lon = (lon + 180) % 360 - 180
+
     return ((lon + 180.) / 360) * pow(2, zoom)
 
 
@@ -132,6 +135,9 @@ def _lat_to_y(lat, zoom):
     :type zoom: int
     :rtype: float
     """
+    if not (-90 <= lat <= 90):
+        lat = (lat + 90) % 180 - 90
+
     return (1 - log(tan(lat * pi / 180) + 1 / cos(lat * pi / 180)) / pi) / 2 * pow(2, zoom)
 
 
@@ -256,7 +262,7 @@ class StaticMap:
 
         if center:
             self.x_center = _lon_to_x(center[0], self.zoom)
-            self.y_center = _lat_to_y(center[1], self.zoom)            
+            self.y_center = _lat_to_y(center[1], self.zoom)
         else:
             # get extent of all lines
             extent = self.determine_extent(zoom=self.zoom)
@@ -379,7 +385,7 @@ class StaticMap:
                     tile_y = (y + max_tile) % max_tile
 
                     if self.reverse_y:
-                        tile_y  = ((1<<self.zoom)-tile_y)-1
+                        tile_y = ((1 << self.zoom) - tile_y) - 1
 
                     res = requests.get(self.url_template.format(z=self.zoom, x=tile_x, y=tile_y), timeout=self.request_timeout, headers=self.headers)
 
