@@ -2,8 +2,9 @@ import itertools
 from io import BytesIO
 from math import sqrt, log, tan, pi, cos, ceil, floor, atan, sinh
 
-import grequests
+import requests
 from PIL import Image, ImageDraw
+from concurrent.futures import ThreadPoolExecutor
 
 
 class Line:
@@ -389,6 +390,8 @@ class StaticMap:
                 url = self.url_template.format(z=self.zoom, x=tile_x, y=tile_y)
                 tiles.append((x, y, url))
 
+        thread_pool = ThreadPoolExecutor(4)
+
         for nb_retry in itertools.count():
             if not tiles:
                 # no tiles left
@@ -398,14 +401,19 @@ class StaticMap:
                 # maximum number of retries exceeded
                 raise RuntimeError("could not download {} tiles: {}".format(len(tiles), tiles))
 
-            rs = [grequests.get(tile[2], timeout=self.request_timeout, headers=self.headers) for tile in tiles]
-
             failed_tiles = []
+            futures = [thread_pool.submit(requests.get, tile[2], timeout=self.request_timeout, headers=self.headers) for tile in tiles]
 
-            for i, response in enumerate(grequests.map(rs, size=4)):
-                x, y, _ = tile = tiles[i]
+            for tile, future in zip(tiles, futures):
+                x, y, url = tile
 
-                if response.status_code != 200:
+                try:
+                    response = future.result()
+                except:
+                    response = None
+
+                if not response or response.status_code != 200:
+                    print("request failed [{}]: {}".format(response.status_code if response else '?', url))
                     failed_tiles.append(tile)
                     continue
 

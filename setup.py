@@ -13,6 +13,7 @@ setup(
     classifiers=[],
     install_requires=[
         'Pillow',
-        'grequests'
+        'requests',
+        'futures'
     ]
 )
