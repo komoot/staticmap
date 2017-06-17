@@ -1,7 +1,8 @@
+import itertools
 from io import BytesIO
 from math import sqrt, log, tan, pi, cos, ceil, floor, atan, sinh
 
-import requests
+import grequests
 from PIL import Image, ImageDraw
 
 
@@ -373,37 +374,52 @@ class StaticMap:
         x_max = int(ceil(self.x_center + (0.5 * self.width / self.tile_size)))
         y_max = int(ceil(self.y_center + (0.5 * self.height / self.tile_size)))
 
+        # assemble all map tiles needed for the map
+        tiles = []
         for x in range(x_min, x_max):
             for y in range(y_min, y_max):
-                nb_requests = 0
-                while True:
-                    nb_requests += 1
+                # x and y may have crossed the date line
+                max_tile = 2 ** self.zoom
+                tile_x = (x + max_tile) % max_tile
+                tile_y = (y + max_tile) % max_tile
 
-                    # x and y may have crossed the date line
-                    max_tile = 2 ** self.zoom
-                    tile_x = (x + max_tile) % max_tile
-                    tile_y = (y + max_tile) % max_tile
+                if self.reverse_y:
+                    tile_y = ((1 << self.zoom) - tile_y) - 1
 
-                    if self.reverse_y:
-                        tile_y = ((1 << self.zoom) - tile_y) - 1
+                url = self.url_template.format(z=self.zoom, x=tile_x, y=tile_y)
+                tiles.append((x, y, url))
 
-                    res = requests.get(self.url_template.format(z=self.zoom, x=tile_x, y=tile_y), timeout=self.request_timeout, headers=self.headers)
+        for nb_retry in itertools.count():
+            if not tiles:
+                # no tiles left
+                break
 
-                    if res.status_code == 200:
-                        break
+            if nb_retry >= 3:
+                # maximum number of retries exceeded
+                raise RuntimeError("could not download {} tiles: {}".format(len(tiles), tiles))
 
-                    if nb_requests >= 3:
-                        # reached max tries to request tile
-                        raise RuntimeError("could not download tile: {}: {}".format(self.url_template.format(z=self.zoom, x=tile_x, y=tile_y), res.status_code))
+            rs = [grequests.get(tile[2], timeout=self.request_timeout, headers=self.headers) for tile in tiles]
 
-                tile = Image.open(BytesIO(res.content)).convert("RGBA")
+            failed_tiles = []
+
+            for i, response in enumerate(grequests.map(rs, size=4)):
+                x, y, _ = tile = tiles[i]
+
+                if response.status_code != 200:
+                    failed_tiles.append(tile)
+                    continue
+
+                tile_image = Image.open(BytesIO(response.content)).convert("RGBA")
                 box = [
                     self._x_to_px(x),
                     self._y_to_px(y),
                     self._x_to_px(x + 1),
                     self._y_to_px(y + 1),
                 ]
-                image.paste(tile, box, tile)
+                image.paste(tile_image, box, tile_image)
+
+            # put failed back into list of tiles to fetch in next try
+            tiles = failed_tiles
 
     def _draw_features(self, image):
         """
