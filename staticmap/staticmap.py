@@ -3,7 +3,7 @@ from io import BytesIO
 from math import sqrt, log, tan, pi, cos, ceil, floor, atan, sinh
 
 import requests
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageColor
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -274,7 +274,9 @@ class StaticMap:
             self.x_center = _lon_to_x(lon_center, self.zoom)
             self.y_center = _lat_to_y(lat_center, self.zoom)
 
-        image = Image.new('RGB', (self.width, self.height), self.background_color)
+        rgba = ImageColor.getrgb(self.background_color)
+        image_mode = 'RGB' if len(rgba) < 4 else 'RGBA'
+        image = Image.new(image_mode, (self.width, self.height), self.background_color)
 
         self._draw_base_layer(image)
         self._draw_features(image)
