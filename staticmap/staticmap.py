@@ -1,10 +1,11 @@
 import itertools
+import time
+from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
 from math import sqrt, log, tan, pi, cos, ceil, floor, atan, sinh
 
 import requests
 from PIL import Image, ImageDraw
-from concurrent.futures import ThreadPoolExecutor
 
 
 class Line:
@@ -178,7 +179,8 @@ def _simplify(points, tolerance=11):
 
 
 class StaticMap:
-    def __init__(self, width, height, padding_x=0, padding_y=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256, tile_request_timeout=None, headers=None, reverse_y=False, background_color="#fff"):
+    def __init__(self, width, height, padding_x=0, padding_y=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256, tile_request_timeout=None, headers=None, reverse_y=False, background_color="#fff",
+                 delay_between_retries=0):
         """
         :param width: map width in pixel
         :type width: int
@@ -200,6 +202,8 @@ class StaticMap:
         :type reverse_y: bool
         :param background_color: Image background color, only visible when tiles are transparent
         :type background_color: str
+        :param delay_between_retries: number of seconds to wait between retries of map tile requests
+        :type delay_between_retries: int
         """
         self.width = width
         self.height = height
@@ -220,6 +224,8 @@ class StaticMap:
         self.x_center = 0
         self.y_center = 0
         self.zoom = 0
+
+        self.delay_between_retries = delay_between_retries
 
     def add_line(self, line):
         """
@@ -396,6 +402,10 @@ class StaticMap:
             if not tiles:
                 # no tiles left
                 break
+
+            if nb_retry > 0 and self.delay_between_retries:
+                # to avoid stressing the map tile server to much, wait some seconds
+                time.sleep(self.delay_between_retries)
 
             if nb_retry >= 3:
                 # maximum number of retries exceeded
