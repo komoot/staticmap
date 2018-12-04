@@ -43,7 +43,7 @@ class Line:
 
 
 class CircleMarker:
-    def __init__(self, coord, color, width):
+    def __init__(self, coord, color, width, outline_color=None):
         """
         :param coord: a lon-lat pair, eg (175.0, 0.0)
         :type coord: tuple
@@ -55,6 +55,7 @@ class CircleMarker:
         self.coord = coord
         self.color = color
         self.width = width
+        self.outline_color = outline_color
 
     @property
     def extent_px(self):
@@ -179,7 +180,9 @@ def _simplify(points, tolerance=11):
 
 
 class StaticMap:
-    def __init__(self, width, height, padding_x=0, padding_y=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256, tile_request_timeout=None, headers=None, reverse_y=False, background_color="#fff",
+    def __init__(self, width, height, padding_x=0, padding_y=0,
+                 url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256,
+                 tile_request_timeout=None, headers=None, reverse_y=False, background_color="#fff",
                  delay_between_retries=0):
         """
         :param width: map width in pixel
@@ -412,7 +415,8 @@ class StaticMap:
                 raise RuntimeError("could not download {} tiles: {}".format(len(tiles), tiles))
 
             failed_tiles = []
-            futures = [thread_pool.submit(requests.get, tile[2], timeout=self.request_timeout, headers=self.headers) for tile in tiles]
+            futures = [thread_pool.submit(requests.get, tile[2], timeout=self.request_timeout, headers=self.headers) for
+                       tile in tiles]
 
             for tile, future in zip(tiles, futures):
                 x, y, url = tile
@@ -451,9 +455,9 @@ class StaticMap:
 
         for line in self.lines:
             points = [(
-                self._x_to_px(_lon_to_x(coord[0], self.zoom)) * 2,
-                self._y_to_px(_lat_to_y(coord[1], self.zoom)) * 2,
-            ) for coord in line.coords]
+                          self._x_to_px(_lon_to_x(coord[0], self.zoom)) * 2,
+                          self._y_to_px(_lat_to_y(coord[1], self.zoom)) * 2,
+                      ) for coord in line.coords]
 
             if line.simplify:
                 points = _simplify(points)
@@ -479,14 +483,14 @@ class StaticMap:
                 point[1] - circle.width,
                 point[0] + circle.width,
                 point[1] + circle.width
-            ), fill=circle.color)
+            ), fill=circle.color, outline=circle.outline_color)
 
         for polygon in self.polygons:
             points = [(
-                self._x_to_px(_lon_to_x(coord[0], self.zoom)) * 2,
-                self._y_to_px(_lat_to_y(coord[1], self.zoom)) * 2,
+                          self._x_to_px(_lon_to_x(coord[0], self.zoom)) * 2,
+                          self._y_to_px(_lat_to_y(coord[1], self.zoom)) * 2,
 
-            ) for coord in polygon.coords]
+                      ) for coord in polygon.coords]
             if polygon.simplify:
                 points = _simplify(points)
 
