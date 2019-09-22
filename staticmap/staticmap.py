@@ -6,6 +6,7 @@ from math import sqrt, log, tan, pi, cos, ceil, floor, atan, sinh
 
 import requests
 from PIL import Image, ImageDraw
+from pathlib import Path
 
 
 class Line:
@@ -227,6 +228,9 @@ class StaticMap:
 
         self.delay_between_retries = delay_between_retries
 
+        self.cache_path = Path("~/.cache/staticmap").expanduser()
+        self.cache_path.mkdir(parents=True, exist_ok=True)
+
     def add_line(self, line):
         """
         :param line: line to draw
@@ -372,6 +376,23 @@ class StaticMap:
         px = (y - self.y_center) * self.tile_size + self.height / 2
         return int(round(px))
 
+    def is_tile_cached(self, filename):
+        fn = self.cache_path / filename
+        if fn.exists():
+            print(fn, "exists")
+            return fn
+        return False
+
+    def cache_tile(self, filename, data):
+        fn = self.cache_path / filename
+        tile_image = Image.open(data).convert("RGBA")
+        tile_image.save(fn)
+
+    def draw_tile_on_image(self, image, box, data):
+        tile_image = Image.open(data).convert("RGBA")
+        image.paste(tile_image, box, tile_image)
+        return image
+
     def _draw_base_layer(self, image):
         """
         :type image: Image.Image
@@ -383,6 +404,7 @@ class StaticMap:
 
         # assemble all map tiles needed for the map
         tiles = []
+        cached_tiles = []
         for x in range(x_min, x_max):
             for y in range(y_min, y_max):
                 # x and y may have crossed the date line
@@ -394,9 +416,22 @@ class StaticMap:
                     tile_y = ((1 << self.zoom) - tile_y) - 1
 
                 url = self.url_template.format(z=self.zoom, x=tile_x, y=tile_y)
-                tiles.append((x, y, url))
+                filename = '_'.join(url.split("/")[2:])
+                if self.is_tile_cached(filename):
+                    cached_tiles.append((x, y, filename))
+                else:
+                    tiles.append((x, y, url))
 
         thread_pool = ThreadPoolExecutor(4)
+
+        for x, y, filename in cached_tiles:
+            box = [
+                self._x_to_px(x),
+                self._y_to_px(y),
+                self._x_to_px(x + 1),
+                self._y_to_px(y + 1),
+            ]
+            self.draw_tile_on_image(image, box, self.cache_path / filename)
 
         for nb_retry in itertools.count():
             if not tiles:
@@ -427,14 +462,16 @@ class StaticMap:
                     failed_tiles.append(tile)
                     continue
 
-                tile_image = Image.open(BytesIO(response.content)).convert("RGBA")
+                data = BytesIO(response.content)
+                filename = '_'.join(url.split("/")[2:])
+                self.cache_tile(filename, data)
                 box = [
                     self._x_to_px(x),
                     self._y_to_px(y),
                     self._x_to_px(x + 1),
                     self._y_to_px(y + 1),
                 ]
-                image.paste(tile_image, box, tile_image)
+                image = self.draw_tile_on_image(image, box, data)
 
             # put failed back into list of tiles to fetch in next try
             tiles = failed_tiles
