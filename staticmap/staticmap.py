@@ -220,9 +220,9 @@ class StaticMap:
         self.reverse_y = reverse_y
         self.background_color = background_color
 
-        # Cached session
-        self.requests_sess = requests.session()
+        # Optional cached session
         if CacheControl is not None:
+            self.requests_sess = requests.session()
             self.cached_sess = CacheControl(self.requests_sess)
         else:
             self.cached_sess = None
@@ -424,10 +424,8 @@ class StaticMap:
                 raise RuntimeError("could not download {} tiles: {}".format(len(tiles), tiles))
 
             failed_tiles = []
-            if self.cached_sess:
-                futures = [thread_pool.submit(self.cached_sess.get, tile[2], timeout=self.request_timeout, headers=self.headers) for tile in tiles]
-            else:
-                futures = [thread_pool.submit(requests.get, tile[2], timeout=self.request_timeout, headers=self.headers) for tile in tiles]
+            request_fn = requests.get if self.cached_sess is None else self.cached_sess.get
+            futures = [thread_pool.submit(request_fn, tile[2], timeout=self.request_timeout, headers=self.headers) for tile in tiles]
 
             for tile, future in zip(tiles, futures):
                 x, y, url = tile
