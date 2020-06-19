@@ -7,6 +7,11 @@ from math import sqrt, log, tan, pi, cos, ceil, floor, atan, sinh
 import requests
 from PIL import Image, ImageDraw
 
+try:
+    from cachecontrol import CacheControl
+except:
+    CacheControl = None
+
 
 class Line:
     def __init__(self, coords, color, width, simplify=True):
@@ -215,6 +220,13 @@ class StaticMap:
         self.reverse_y = reverse_y
         self.background_color = background_color
 
+        # Optional cached session
+        if CacheControl is not None:
+            self.requests_sess = requests.session()
+            self.cached_sess = CacheControl(self.requests_sess)
+        else:
+            self.cached_sess = None
+
         # features
         self.markers = []
         self.lines = []
@@ -412,7 +424,8 @@ class StaticMap:
                 raise RuntimeError("could not download {} tiles: {}".format(len(tiles), tiles))
 
             failed_tiles = []
-            futures = [thread_pool.submit(requests.get, tile[2], timeout=self.request_timeout, headers=self.headers) for tile in tiles]
+            request_fn = requests.get if self.cached_sess is None else self.cached_sess.get
+            futures = [thread_pool.submit(request_fn, tile[2], timeout=self.request_timeout, headers=self.headers) for tile in tiles]
 
             for tile, future in zip(tiles, futures):
                 x, y, url = tile
