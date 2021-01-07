@@ -74,18 +74,24 @@ class IconMarker:
         :type offset_y: int
         """
         self.coord = coord
-        self.img = Image.open(file_path, 'r')
+        # self.img = Image.open(file_path, 'r')
+        self.img_path = file_path
         self.offset = (offset_x, offset_y)
 
     @property
     def extent_px(self):
-        w, h = self.img.size
+
+        img = Image.open(self.img_path, 'r')
+
+        w, h = img.size
         return (
             self.offset[0],
             h - self.offset[1],
             w - self.offset[0],
             self.offset[1],
         )
+
+        img.close()
 
 
 class Polygon:
@@ -504,7 +510,10 @@ class StaticMap:
                 self._x_to_px(_lon_to_x(icon.coord[0], self.zoom)) - icon.offset[0],
                 self._y_to_px(_lat_to_y(icon.coord[1], self.zoom)) - icon.offset[1]
             )
-            image.paste(icon.img, position, icon.img)
+
+            img = Image.open(icon.img_path, 'r')
+            image.paste(img, position, img)
+            img.close()
 
 
 if __name__ == '__main__':
