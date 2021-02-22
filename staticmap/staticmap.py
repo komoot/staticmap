@@ -412,22 +412,25 @@ class StaticMap:
                 raise RuntimeError("could not download {} tiles: {}".format(len(tiles), tiles))
 
             failed_tiles = []
-            futures = [thread_pool.submit(requests.get, tile[2], timeout=self.request_timeout, headers=self.headers) for tile in tiles]
+            futures = [
+                thread_pool.submit(self.get, tile[2], timeout=self.request_timeout, headers=self.headers)
+                for tile in tiles
+            ]
 
             for tile, future in zip(tiles, futures):
                 x, y, url = tile
 
                 try:
-                    response = future.result()
+                    response_status_code, response_content = future.result()
                 except:
-                    response = None
+                    response_status_code, response_content = None, None
 
-                if not response or response.status_code != 200:
-                    print("request failed [{}]: {}".format(response.status_code if response else '?', url))
+                if response_status_code != 200:
+                    print("request failed [{}]: {}".format(response_status_code, url))
                     failed_tiles.append(tile)
                     continue
 
-                tile_image = Image.open(BytesIO(response.content)).convert("RGBA")
+                tile_image = Image.open(BytesIO(response_content)).convert("RGBA")
                 box = [
                     self._x_to_px(x),
                     self._y_to_px(y),
@@ -438,6 +441,13 @@ class StaticMap:
 
             # put failed back into list of tiles to fetch in next try
             tiles = failed_tiles
+
+    def get(self, url, **kwargs):
+        """
+        returns the status code and content (in bytes) of the requested tile url
+        """
+        res = requests.get(url, **kwargs)
+        return res.status_code, res.content
 
     def _draw_features(self, image):
         """
