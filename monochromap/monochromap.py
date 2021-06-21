@@ -184,9 +184,9 @@ def _simplify(points, tolerance=11):
     return new_coords
 
 
-class StaticMap:
-    def __init__(self, width, height, padding_x=0, padding_y=0, url_template="http://a.tile.komoot.de/komoot-2/{z}/{x}/{y}.png", tile_size=256, tile_request_timeout=None, headers=None, reverse_y=False, background_color="#fff",
-                 delay_between_retries=0):
+class MonochroMap:
+    def __init__(self, width=800, height=600, padding_x=0, padding_y=0, url_template='http://a.tile.stamen.com/toner/{z}/{x}/{y}.png', 
+                tile_size=256, tile_request_timeout=None, headers=None, reverse_y=False, background_color='#fff', delay_between_retries=2):
         """
         :param width: map width in pixel
         :type width: int
@@ -527,7 +527,7 @@ class StaticMap:
 
 
 if __name__ == '__main__':
-    map = StaticMap(300, 400, 10)
+    map = MonochroMap(300, 400, 10)
     line = Line([(13.4, 52.5), (2.3, 48.9)], 'blue', 3)
     map.add_line(line)
     image = map.render()
