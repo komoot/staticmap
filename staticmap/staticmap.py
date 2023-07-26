@@ -503,7 +503,7 @@ class StaticMap:
             if polygon.fill_color or polygon.outline_color:
                 draw.polygon(points, fill=polygon.fill_color, outline=polygon.outline_color)
 
-        image_lines = image_lines.resize((self.width, self.height), Image.ANTIALIAS)
+        image_lines = image_lines.resize((self.width, self.height), Image.LANCZOS)
 
         # merge lines with base image
         image.paste(image_lines, (0, 0), image_lines)
