@@ -131,6 +131,9 @@ image.save('icons.png')
 
 ![Ferry Connection Shown on a Map](/samples/icons.png?raw=true)
 
+### Alternatives
+With [papermap](https://github.com/sgraaf/papermap) there is also a spin-off project dedicated to print maps.
+
 ### Licence
 StaticMap is open source and licensed under Apache License, Version 2.0
 
