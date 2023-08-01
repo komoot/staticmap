@@ -1,0 +1,26 @@
+name: Unit tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    name: python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    container: python:${{ matrix.python-version }}
+    strategy:
+      matrix:
+        python-version:  [ "3.8", "3.9", "3.10", "3.11" ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Upgrade pip
+        run: python3 -m pip install --upgrade pip
+      - name: Create and source virtual environment
+        run: |
+          python3 -m venv .venv 
+          . .venv/bin/activate
+      - name: Install requirements
+        run: python3 -m pip install -r requirements.txt
+      - name: Run unit tests
+        run: python -m unittest
