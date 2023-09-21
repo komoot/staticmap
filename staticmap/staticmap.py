@@ -62,19 +62,19 @@ class CircleMarker:
 
 
 class IconMarker:
-    def __init__(self, coord, file_path, offset_x, offset_y):
+    def __init__(self, coord, file_path_or_img , offset_x, offset_y):
         """
         :param coord:  a lon-lat pair, eg (175.0, 0.0)
         :type coord: tuple
         :param file_path: path to icon
-        :type file_path: str
+        :type file_path_or_img: str / Image
         :param offset_x: x position of the tip of the icon. relative to left bottom, in pixel
         :type offset_x: int
         :param offset_y: y position of the tip of the icon. relative to left bottom, in pixel
         :type offset_y: int
         """
         self.coord = coord
-        self.img = Image.open(file_path, 'r')
+        self.img = Image.open(file_path_or_img, 'r') if type(file_path_or_img) == type("") else file_path_or_img
         self.offset = (offset_x, offset_y)
 
     @property
