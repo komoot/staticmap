@@ -422,7 +422,7 @@ class StaticMap:
 
                 try:
                     response_status_code, response_content = future.result()
-                except:
+                except Exception:
                     response_status_code, response_content = None, None
 
                 if response_status_code != 200:
